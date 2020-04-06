@@ -1,11 +1,11 @@
 from tkinter import *
 import mysql.connector
+from tkinter.ttk import Scrollbar
 import tkinter.messagebox as MessageBox
 from mysql.connector import Error
 from PIL import ImageTk, Image
 from operator import itemgetter
 import smtplib
-
 from random import randint
 
 def registerUser():
@@ -153,24 +153,6 @@ def registerUser():
 
 def login_user():
     def checkUsernamePassword():
-        def logout_command():
-            logOut = Toplevel()
-            conn = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="Parth@123",
-                database="loginForPython"
-            )
-            mycursor = conn.cursor()
-            mycursor.execute("SELECT * FROM user_info")
-            myresult = mycursor.fetchall()
-            logInDetail = 'F'
-            mycursor.execute(
-                "UPDATE user_info set isLoggedIn = ('"+logInDetail+"') where user_name=('"+username+"')")
-            conn.commit()
-
-            Label(logOut, text="You have successfully logged out").pack()
-            logOut.mainloop()
 
         def product_category():
             loginUser.destroy()
@@ -190,10 +172,13 @@ def login_user():
             productPrice = list(map(itemgetter(3), allRecords))
             productImages = list(map(itemgetter(4), allRecords))
             productCategories = list(map(itemgetter(5), allRecords))
-            
-            def allCategory(row, x, y, categoryList, category):
+
+            def myCart():
+                pass
+
+            def allCategoryContents(row, x, y, categoryList, category):
                 n=2
-                cartBtnPath = "/home/dell/Desktop/VSCode/Python_proj/Images/CartIcon.ppm"       
+                cartBtnPath = "/home/dell/Desktop/VSCode/Python_proj/Images/CartIcon.ppm"
                 path = productImages[category]
                 image = Image.open(path)
                 [imageSizeWidth, imageSizeHeight] = [45, 75]
@@ -215,38 +200,89 @@ def login_user():
 
                 cartBtnImg = ImageTk.PhotoImage(cartBtnImg1)
                 Label(categoryList, text=productNames[category], font="Times 16").grid(row=row, column=1, padx=10, pady=10)
+                #row += 1
+                #Label(categoryList, text=productInfo[category], font="Times 11" ,wraplength=200).grid(row=row, column=1)
+                #row -= 1
                 my_btn = Button(categoryList, text="Add to Cart", font="Times 14", image=cartBtnImg, compound=LEFT)
                 my_btn.image = cartBtnImg
                 my_btn.grid(row=row, column=2, padx=10, pady=10)        
             
-            def mobileCategory():
-                mobilesList = Toplevel()
-                mobilesList.geometry("700x700")
-                mobilesList.title("Mobiles")
+            def allCategoryMainPage(parentTk, text, categoryNumber):
+                def onFrameConfigure(event):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
+                
+                canvas = Canvas(parentTk)
+                canvas.grid(sticky=N+S+E+W)
+                
+                yscrollbar = Scrollbar(parentTk, command=canvas.yview)
+                yscrollbar.grid(row=0, column=3, sticky=N+S)
+            
+                canvas.configure(yscrollcommand= yscrollbar.set)
+                
+                frame = Frame(canvas)
+                
+                canvas.create_window((0, 0), window=frame, anchor='nw')
+                frame.bind("<Configure>", onFrameConfigure)
+                
+                parentTk.grid_rowconfigure(0, weight=1)
+                parentTk.grid_columnconfigure(0, weight=1)
+                
+                cartBtnPath = "/home/dell/Desktop/VSCode/Python_proj/Images/CartIcon.ppm"
+                Label(frame, text=text, font="Times 20").grid(row=0, column=1)
+                cartBtnImg1 = Image.open(cartBtnPath)
+                cartBtnImg1 = cartBtnImg1.resize((20, 20), Image.ANTIALIAS)
+                cartBtnImg = ImageTk.PhotoImage(cartBtnImg1)
 
-                Label(mobilesList, text="MOBILES LIST", font="Times 20").grid(row=0, column=1)
-                row=0
+                cartContents = Button(frame, text="My Cart", image=cartBtnImg, compound=LEFT, command=myCart, font="Times 16")
+                cartContents.image = cartBtnImg
+                cartContents.grid(row=0, column=2)
+                row=1
                 x=0
                 y=0
                 
                 for category in range(len(productCategories)):
-                    if productCategories[category] == 6666:
-                        allCategory(row, x, y, mobilesList, category)
+                    if productCategories[category] == categoryNumber:
+                        allCategoryContents(row, x, y, frame, category)
                         row+=1
                         x+=50
                         y+=50
-                        
-
+                canvas.configure(scrollregion=canvas.bbox("all"))
+            
+            def mobileCategory():
+                mobilesList = Toplevel()
+                mobilesList.title("Mobiles")
+                mobilesList.geometry("600x600")
+                allCategoryMainPage(mobilesList, "MOBILES LIST", 6666)
                 mobilesList.mainloop()
+
+            
 
             def fashionCategory():
                 pass
 
-            def homeCategory():
+            def drugCategory():
                 pass
 
-            def toysCategory():
+            def elecCategory():
                 pass
+
+            def logout_command():
+                productCategory.destroy()
+                conn = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    passwd="Parth@123",
+                    database="loginForPython"
+                )
+                mycursor = conn.cursor()
+                mycursor.execute("SELECT * FROM user_info")
+                myresult = mycursor.fetchall()
+                logInDetail = 'F'
+                mycursor.execute(
+                    "UPDATE user_info set isLoggedIn = ('"+logInDetail+"') where user_name=('"+username+"')")
+                conn.commit()
+
+                MessageBox.showinfo('Logged Out', 'You have successfully logged out')
 
             productCategory = Toplevel()
             productCategory.title("Product Category")
@@ -259,21 +295,21 @@ def login_user():
             menubar.menu.add_checkbutton(label=username)
             menubar.menu.add_checkbutton(
                 label="Logout", command=logout_command)
-            menubar.pack()
+            menubar.grid(row=0, sticky=W+E)
 
             mobiles = Button(productCategory, text="Mobiles",
                              command=mobileCategory)
-            mobiles.place(x=50, y=50)
+            mobiles.grid(row=2, column=1)
 
             fashion = Button(productCategory, text="Fashion",
                              command=fashionCategory)
-            fashion.place(x=130, y=50)
+            fashion.grid(row=2, column=2)
 
-            home = Button(productCategory, text="Home", command=homeCategory)
-            home.place(x=210, y=50)
+            home = Button(productCategory, text="Medicines and Drugs", command=drugCategory)
+            home.grid(row=2, column=3)
 
-            toys = Button(productCategory, text="Toys", command=toysCategory)
-            toys.place(x=290, y=50)
+            toys = Button(productCategory, text="Electronics", command=elecCategory)
+            toys.grid(row=2, column=0)
 
             productCategory.mainloop()
 
