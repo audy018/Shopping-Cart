@@ -42,7 +42,7 @@ def registerUser():
             defaultIsLoggedInValue = 'F'
             
             # Insert the record into the table
-            user_data = "insert into user_info values('"+u_name+"','"+passw+"','" + \
+            user_data = "insert into user_info(user_name, password, first_name, last_name, gender, zipcode, email, que, ans, phone_no, isLoggedIn) values('"+u_name+"','"+passw+"','" + \
                 f_name+"','"+l_name+"','"+gen+"','"+zipc+"','" + \
                 em+"','"+que+"','"+answer+"','"+p_no+"','"+defaultIsLoggedInValue+"')"
             c.execute(user_data)
@@ -167,16 +167,98 @@ def login_user():
             c.execute("SELECT * FROM products")
             allRecords = c.fetchall()
 
+            productIDs = list(map(itemgetter(0), allRecords))
             productNames = list(map(itemgetter(1), allRecords))
             productInfo = list(map(itemgetter(2), allRecords))
             productPrice = list(map(itemgetter(3), allRecords))
             productImages = list(map(itemgetter(4), allRecords))
             productCategories = list(map(itemgetter(5), allRecords))
-
+            recordOfItems = []   
+            productList = []
+            
             def myCart():
-                pass
+                myCart1 = Toplevel()
+                myCart1.title("View Cart")
+                myCart1.geometry("600x600")
+                
+                numberOfItems = 1
 
+                handleIncrement = lambda x: x+1
+
+                handleDecrement = lambda x: x-1
+
+
+                conn = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    passwd="Parth@123",
+                    database="loginForPython"
+                )
+
+                sumOfEveryItem = 0
+                c = conn.cursor()
+                
+                for item in range(len(productList)):
+                    sql = "SELECT * FROM products where pid=('"+str(productList[item])+"')"
+                    c.execute(sql)
+                    recordOfItems.append(c.fetchone())
+                
+                priceListOfEveryItem = []
+                namesOfProductsInCart = list(map(itemgetter(1), recordOfItems))
+                priceOfProductsInCart = list(map(itemgetter(3), recordOfItems))
+                pathOfProductsInCart = list(map(itemgetter(4), recordOfItems))
+                row = 1
+                Label(myCart1, text="Image").grid(row=0, column=0)
+                Label(myCart1, text="Name").grid(row=0, column=1)
+                Label(myCart1, text="Quantity").grid(row=0, column=3)
+                Label(myCart1, text="Price").grid(row=0, column=5)
+                n = 2
+                for everyItem in range(len(productList)):
+                    numberOfItems = 1
+                    path = pathOfProductsInCart[everyItem]
+                    image = Image.open(path)
+                    [imageSizeWidth, imageSizeHeight] = [45, 75]
+                    same = True
+                    newImageSizeWidth = int(imageSizeWidth*n)
+                    if same:
+                        newImageSizeHeight = int(imageSizeHeight*n) 
+                    else:
+                        newImageSizeHeight = int(imageSizeHeight/n) 
+
+                    image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
+                    img = ImageTk.PhotoImage(image)
+                    imgCanvas = Label(myCart1, image=img)
+                    imgCanvas.image = img
+                    imgCanvas.grid(row=row, column=0, padx=10, pady=10)
+
+                    Label(myCart1, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
+                    incrementBtn = Button(myCart1, text="-", command=handleDecrement(numberOfItems))
+                    incrementBtn.grid(row=row, column=3)
+                    Label(myCart1, textvariable=numberOfItems).grid(row=row, column=4, padx=5, pady=5)
+                    decrementBtn = Button(myCart1, text="+", command=handleIncrement(numberOfItems))
+                    decrementBtn.grid(row=row, column=4)
+
+                    Label(myCart1, text="{}".format(priceOfProductsInCart[everyItem] * numberOfItems)).grid(row=row, column=5, padx=10, pady=10)
+                    priceListOfEveryItem.append(priceOfProductsInCart[everyItem])
+                    numberOfItems = 1
+                    row+= 1
+
+                for item in priceListOfEveryItem:
+                    sumOfEveryItem += int(item)
+
+                Label(myCart1, text="Total: ", font="Times 16 bold").grid(row=row, column=4)
+                Label(myCart1, text=sumOfEveryItem, font="Times 16 bold").grid(row=row, column=5)
+
+                myCart1.mainloop()
             def allCategoryContents(row, x, y, categoryList, category):
+                def addToCart():
+                    if my_btn['state'] == ACTIVE:
+                        my_btn.configure(state=DISABLED, text="Added to the Cart", image=None, compound=CENTER)
+                        my_btn.image = None
+                    MessageBox.showinfo("Product Added!", "Product Added to the Cart")
+                    productList.append(productIDs[category])
+                    
+
                 n=2
                 cartBtnPath = "/home/dell/Desktop/VSCode/Python_proj/Images/CartIcon.ppm"
                 path = productImages[category]
@@ -200,12 +282,11 @@ def login_user():
 
                 cartBtnImg = ImageTk.PhotoImage(cartBtnImg1)
                 Label(categoryList, text=productNames[category], font="Times 16").grid(row=row, column=1, padx=10, pady=10)
-                #row += 1
-                #Label(categoryList, text=productInfo[category], font="Times 11" ,wraplength=200).grid(row=row, column=1)
-                #row -= 1
-                my_btn = Button(categoryList, text="Add to Cart", font="Times 14", image=cartBtnImg, compound=LEFT)
+                
+                my_btn = Button(categoryList, text="Add to Cart", font="Times 14", image=cartBtnImg, compound=LEFT, command=addToCart)
                 my_btn.image = cartBtnImg
-                my_btn.grid(row=row, column=2, padx=10, pady=10)        
+                
+                my_btn.grid(row=row, column=2, padx=10, pady=10)   
             
             def allCategoryMainPage(parentTk, text, categoryNumber):
                 def onFrameConfigure(event):
@@ -254,8 +335,6 @@ def login_user():
                 mobilesList.geometry("600x600")
                 allCategoryMainPage(mobilesList, "MOBILES LIST", 6666)
                 mobilesList.mainloop()
-
-            
 
             def fashionCategory():
                 pass
