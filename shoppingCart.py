@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 import mysql.connector
 from tkinter.ttk import Scrollbar
 import tkinter.messagebox as MessageBox
@@ -149,11 +150,10 @@ def registerUser():
 
     # Execute the register GUI
     register.mainloop()
-
+number = []
 
 def login_user():
     def checkUsernamePassword():
-
         def product_category():
             loginUser.destroy()
             conn = mysql.connector.connect(
@@ -173,92 +173,144 @@ def login_user():
             productPrice = list(map(itemgetter(3), allRecords))
             productImages = list(map(itemgetter(4), allRecords))
             productCategories = list(map(itemgetter(5), allRecords))
-            recordOfItems = []   
-            productList = []
+            recordOfItemsInCart = []   
+            
             
             def myCart():
-                myCart1 = Toplevel()
-                myCart1.title("View Cart")
-                myCart1.geometry("600x600")
-                
-                numberOfItems = 1
+                try:
+                    myCart1 = Toplevel()
+                    myCart1.title("View Cart")
+                    myCart1.geometry("600x600")
+                    conn1 = mysql.connector.connect(
+                            host="localhost",
+                            user="root",
+                            passwd="Parth@123",
+                            database="loginForPython"
+                    )
+                    try:
 
-                handleIncrement = lambda x: x+1
+                        everyProduct = IntVar()
+                        sumOfEveryItem = 0
+                        cur = conn1.cursor()
+                        cur.execute("SELECT * FROM cartItems where userID=('"+str(username)+"')")
+                        records=cur.fetchall()
+                        productIDsInCart = list(map(itemgetter(1), records))
+                        
+                        for item in range(len(productIDsInCart)):
+                            sql = "SELECT * FROM products where pid=('"+str(productIDsInCart[item])+"')"
+                            cur.execute(sql)
+                            recordOfItemsInCart.append(cur.fetchone())
+                        
+                        namesOfProductsInCart = list(map(itemgetter(1), recordOfItemsInCart))
+                        priceOfProductsInCart = list(map(itemgetter(3), recordOfItemsInCart))
+                        pathOfProductsInCart = list(map(itemgetter(4), recordOfItemsInCart))
+                        counters = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                        priceLists = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                        productIDSInt = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                        priceOfEvery = []
+                        
+                        def increase_stat(event=None, counter=None, mul=None, index=None):
+                            counter.set(counter.get() + 1)
+                            mul.set(mul.get() + priceOfProductsInCart[index])
+                            sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                            sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                            try:
+                                cur.execute(sql1)
+                                conn1.commit()
+                                cur.execute(sql2)
+                                conn1.commit()
+                            except:
+                                MessageBox.showinfo("Error", "Unable to process request")
+                                conn1.rollback()
+                            
+                        def decrease_stat(event=None, counter=None, mul=None ,index=None):
+                            counter.set(counter.get() - 1)
+                            mul.set(mul.get() - priceOfProductsInCart[index])
+                            sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                            sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                            try:
+                                cur.execute(sql1)
+                                conn1.commit()
+                                cur.execute(sql2)
+                                conn1.commit()
+                            except:
+                                MessageBox.showinfo("Error", "Unable to process request")
+                                conn1.rollback()
+                        
+                        def checkOut():
+                            conn1.close()
+                            
+                        
+                        for i in range(len(namesOfProductsInCart)):
+                            priceLists[i].set(priceOfProductsInCart[i])
+                        
+                        row = 1
+                        Label(myCart1, text="Image").grid(row=0, column=0)
+                        Label(myCart1, text="Name").grid(row=0, column=1)
+                        Label(myCart1, text="Quantity").grid(row=0, column=3)
+                        Label(myCart1, text="Price").grid(row=0, column=5)
+                        n = 2
+                        
+                        for everyItem in range(len(productIDsInCart)):
+                            
+                            path = pathOfProductsInCart[everyItem]
+                            image = Image.open(path)
+                            [imageSizeWidth, imageSizeHeight] = [45, 75]
+                            same = True
+                        
+                            newImageSizeWidth = int(imageSizeWidth*n)
+                            if same:
+                                newImageSizeHeight = int(imageSizeHeight*n) 
+                            else:
+                                newImageSizeHeight = int(imageSizeHeight/n) 
 
-                handleDecrement = lambda x: x-1
+                            image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
+                            img = ImageTk.PhotoImage(image)
+                            imgCanvas = Label(myCart1, image=img)
+                            imgCanvas.image = img
+                            imgCanvas.grid(row=row, column=0, padx=10, pady=10)
 
-
-                conn = mysql.connector.connect(
-                    host="localhost",
-                    user="root",
-                    passwd="Parth@123",
-                    database="loginForPython"
-                )
-
-                sumOfEveryItem = 0
-                c = conn.cursor()
-                
-                for item in range(len(productList)):
-                    sql = "SELECT * FROM products where pid=('"+str(productList[item])+"')"
-                    c.execute(sql)
-                    recordOfItems.append(c.fetchone())
-                
-                priceListOfEveryItem = []
-                namesOfProductsInCart = list(map(itemgetter(1), recordOfItems))
-                priceOfProductsInCart = list(map(itemgetter(3), recordOfItems))
-                pathOfProductsInCart = list(map(itemgetter(4), recordOfItems))
-                row = 1
-                Label(myCart1, text="Image").grid(row=0, column=0)
-                Label(myCart1, text="Name").grid(row=0, column=1)
-                Label(myCart1, text="Quantity").grid(row=0, column=3)
-                Label(myCart1, text="Price").grid(row=0, column=5)
-                n = 2
-                for everyItem in range(len(productList)):
-                    numberOfItems = 1
-                    path = pathOfProductsInCart[everyItem]
-                    image = Image.open(path)
-                    [imageSizeWidth, imageSizeHeight] = [45, 75]
-                    same = True
-                    newImageSizeWidth = int(imageSizeWidth*n)
-                    if same:
-                        newImageSizeHeight = int(imageSizeHeight*n) 
-                    else:
-                        newImageSizeHeight = int(imageSizeHeight/n) 
-
-                    image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
-                    img = ImageTk.PhotoImage(image)
-                    imgCanvas = Label(myCart1, image=img)
-                    imgCanvas.image = img
-                    imgCanvas.grid(row=row, column=0, padx=10, pady=10)
-
-                    Label(myCart1, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
-                    incrementBtn = Button(myCart1, text="-", command=handleDecrement(numberOfItems))
-                    incrementBtn.grid(row=row, column=3)
-                    Label(myCart1, textvariable=numberOfItems).grid(row=row, column=4, padx=5, pady=5)
-                    decrementBtn = Button(myCart1, text="+", command=handleIncrement(numberOfItems))
-                    decrementBtn.grid(row=row, column=4)
-
-                    Label(myCart1, text="{}".format(priceOfProductsInCart[everyItem] * numberOfItems)).grid(row=row, column=5, padx=10, pady=10)
-                    priceListOfEveryItem.append(priceOfProductsInCart[everyItem])
-                    numberOfItems = 1
-                    row+= 1
-
-                for item in priceListOfEveryItem:
-                    sumOfEveryItem += int(item)
-
-                Label(myCart1, text="Total: ", font="Times 16 bold").grid(row=row, column=4)
-                Label(myCart1, text=sumOfEveryItem, font="Times 16 bold").grid(row=row, column=5)
-
-                myCart1.mainloop()
+                            Label(myCart1, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
+                            
+                            Label(myCart1, textvariable=counters[everyItem]).grid(row=row, column=3)
+                            Button(myCart1, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
+                            Button(myCart1, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
+                            priceLabel = Label(myCart1, textvariable=priceLists[everyItem])
+                            priceLabel.grid(row=row, column=5)
+                            #priceListOfEveryItem.append()
+                            row+= 1
+                        checkOutBtn = Button(myCart1, text="Chekout", command=checkOut)
+                        checkOutBtn.grid(row=row, column=5)
+                        myCart1.mainloop()
+                    except:
+                        MessageBox.showerror("Error", "Error while processing request")
+                except:
+                    MessageBox.showerror("Error", "Error while processing request")
             def allCategoryContents(row, x, y, categoryList, category):
                 def addToCart():
                     if my_btn['state'] == ACTIVE:
                         my_btn.configure(state=DISABLED, text="Added to the Cart", image=None, compound=CENTER)
                         my_btn.image = None
-                    MessageBox.showinfo("Product Added!", "Product Added to the Cart")
-                    productList.append(productIDs[category])
-                    
+                    conn = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        passwd="Parth@123",
+                        database="loginForPython"
+                    )
 
+                    c = conn.cursor()
+                    sql = "INSERT INTO cartItems(userID, productID) values('"+str(username)+"','"+str(productIDs[category])+"')"
+                    try:
+                        c.execute(sql)
+                        MessageBox.showinfo("Product Added!", "Product Added to the Cart")
+                        
+                        conn.commit()
+                    #print(productIDs)
+                    except:
+                        MessageBox.showinfo('Error','Unable to add product')
+                        conn.rollback()
+                    finally:
+                        conn.close()
                 n=2
                 cartBtnPath = "/home/dell/Desktop/VSCode/Python_proj/Images/CartIcon.ppm"
                 path = productImages[category]
@@ -337,13 +389,39 @@ def login_user():
                 mobilesList.mainloop()
 
             def fashionCategory():
-                pass
+                fashionList = Toplevel()
+                fashionList.title("Fashion List")
+                fashionList.geometry("600x600")
+                allCategoryMainPage(fashionList, "FASHION LIST", 1111)
+                fashionList.mainloop()
 
             def drugCategory():
-                pass
+                drugList = Toplevel()
+                drugList.title("Medicines and Drugs")
+                drugList.geometry("600x600")
+                allCategoryMainPage(drugList, "MEDICINES AND DRUGS", 3333)
+                drugList.mainloop()
 
             def elecCategory():
-                pass
+                elecList = Toplevel()
+                elecList.title("Electronics")
+                elecList.geometry("600x600")
+                allCategoryMainPage(elecList, "ELECTRONICS LIST", 2222)
+                elecList.mainloop()
+
+            def beautyAndCare():
+                careList = Toplevel()
+                careList.title("Beauty and Care")
+                careList.geometry("600x600")
+                allCategoryMainPage(careList, "BEAUTY AND CARE", 4444)
+                careList.mainloop()
+
+            def grocery():
+                groceryList = Toplevel()
+                groceryList.title("Grocery List")
+                groceryList.geometry("600x600")
+                allCategoryMainPage(groceryList, "GROCERIES", 5555)
+                groceryList.mainloop()
 
             def logout_command():
                 productCategory.destroy()
@@ -390,6 +468,11 @@ def login_user():
             toys = Button(productCategory, text="Electronics", command=elecCategory)
             toys.grid(row=2, column=0)
 
+            groceryBtn = Button(productCategory, text="Groceries", command=grocery)
+            groceryBtn.grid(row=2, column=4)
+
+            careBtn = Button(productCategory, text="Beauty and Care", command=grocery)
+            careBtn.grid(row=2, column=5)
             productCategory.mainloop()
 
         username = username_entry.get()
@@ -688,6 +771,7 @@ def login_admin():
                     mycursor.execute(
                         "UPDATE admin_info set isLoggedIn = ('"+logInDetail+"') where admin_id=('"+username+"')")
                     conn.commit()
+                    Login()
                     
 
                 else:
@@ -832,7 +916,85 @@ def login_admin():
     def reset():
         username_entry.delete(0, 'end')
         password_entry.delete(0, 'end')
+    
+    def show_details():
+        detailsUser= Toplevel()
+        detailsUser.geometry("300x300")    
+        Label(detailsUser,text = "Entries",font ="comic 20 bold underline").pack()
+        conn = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        passwd="Parth@123",
+                        database="loginForPython",
+                    )
+        c = conn.cursor()
+        c.execute("select * from user_info")  
+        result = c.fetchall()
+        usernames = list(map(itemgetter(0), result))
+        passwords = list(map(itemgetter(1), result))
+        firstNames = list(map(itemgetter(2), result))
+        for record in range(len(result)):  
+            Label(detailsUser, text="Username").pack()
+            Label(detailsUser, text=usernames[record]).pack()
+            Label(detailsUser, text="Password").pack()
+            Label(detailsUser, text=passwords[record]).pack()
+            Label(detailsUser, text="First Name").pack()
+            Label(detailsUser, text=firstNames[record]).pack()
+            Label(detailsUser, text="-------------------------").pack()        
 
+        detailsUser.mainloop()
+    
+    def modification():
+        def deleteuser():
+            u_name = username1_entry.get()
+            conn = mysql.connector.connect(
+                            host="localhost",
+                            user="root",
+                            passwd="Parth@123",
+                            database="loginForPython"
+                            
+                        )
+            c = conn.cursor()
+            c.execute("select * from user_info")  
+            all_records = c.fetchall() 
+            userNamesList = list(map(itemgetter(0), all_records))
+            if u_name in userNamesList :
+                sql = "delete from user_info where user_name =('"+u_name+"')"
+                try:
+                    c.execute(sql)
+                    conn.commit()
+                    MessageBox.showinfo("Success", "User deleted successfully from the database")
+                except: 
+                    conn.rollback()
+                finally:
+                    conn.close()
+            else :
+                MessageBox.showinfo("User not present in the database")
+        
+        m = Toplevel()
+        m.geometry("300x300")
+        Label(m,text ="Username",font = "comic 10 bold").grid(row= 2,column=1)
+        username1_entry = Entry(m, width=20)
+        username1_entry.grid(row =2,column=2)
+        delete_btn = Button(m,text="DELETE",command=deleteuser)
+        delete_btn.place(x=150, y=70,anchor=CENTER)
+        final_btn = Button(m,text="FINALIZE")
+        final_btn.place(x=150, y=120,anchor=CENTER)
+    
+    def Login():
+        print ('Successfully logged in')
+        MessageBox.askquestion("Confirm","Are u sure to visit that page")       
+        Afterlogin = Toplevel()
+        Afterlogin.geometry("500x500")
+        Label(Afterlogin,text ="Administrator work",font ="comic 20 bold").place(x=250,y=20,anchor=CENTER)
+        
+        show_btn = Button(Afterlogin,text = "show logins",command=show_details)
+        show_btn.place(x= 250,y=100,anchor=CENTER)      
+        updt_btn = Button(Afterlogin,text="modify user",command =modification)
+        updt_btn.place(x=250, y=200,anchor=CENTER)     
+        vieworder_btn =Button(Afterlogin,text="view orders")
+        vieworder_btn.place(x=250,y= 300,anchor=CENTER) 
+    
     loginAdmin = Toplevel()
     loginAdmin.title("Login")
     loginAdmin.geometry("300x300")
@@ -882,5 +1044,5 @@ def main_screen():
     main.mainloop()
 
 
-if __name__ == "__main__":
-    main_screen()
+
+main_screen()
