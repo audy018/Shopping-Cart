@@ -175,9 +175,11 @@ def login_user():
             productCategories = list(map(itemgetter(5), allRecords))
             recordOfItemsInCart = []   
             
-            
             def myCart():
                 try:
+                    def onFrameConfigure(event):
+                        canvas.configure(scrollregion=canvas.bbox("all"))
+                    
                     myCart1 = Toplevel()
                     myCart1.title("View Cart")
                     myCart1.geometry("600x600")
@@ -187,6 +189,20 @@ def login_user():
                             passwd="Parth@123",
                             database="loginForPython"
                     )
+                    canvas = Canvas(myCart1)
+                    canvas.grid(sticky=N+S+E+W)
+                    
+                    yscrollbar = Scrollbar(myCart1, command=canvas.yview)
+                    yscrollbar.grid(row=0, column=3, sticky=N+S)
+                
+                    canvas.configure(yscrollcommand= yscrollbar.set)
+                    
+                    frame = Frame(canvas)
+                    
+                    canvas.create_window((0, 0), window=frame, anchor='nw')
+                    frame.bind("<Configure>", onFrameConfigure)
+                    myCart1.grid_rowconfigure(0, weight=1)
+                    myCart1.grid_columnconfigure(0, weight=1)
                     try:
 
                         everyProduct = IntVar()
@@ -253,10 +269,10 @@ def login_user():
                             priceLists[i].set(priceOfProductsInCart[i])
                         
                         row = 1
-                        Label(myCart1, text="Image").grid(row=0, column=0)
-                        Label(myCart1, text="Name").grid(row=0, column=1)
-                        Label(myCart1, text="Quantity").grid(row=0, column=3)
-                        Label(myCart1, text="Price").grid(row=0, column=5)
+                        Label(frame, text="Image").grid(row=0, column=0)
+                        Label(frame, text="Name").grid(row=0, column=1)
+                        Label(frame, text="Quantity").grid(row=0, column=3)
+                        Label(frame, text="Price").grid(row=0, column=5)
                         n = 2
                         
                         
@@ -275,29 +291,31 @@ def login_user():
 
                             image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
                             img = ImageTk.PhotoImage(image)
-                            imgCanvas = Label(myCart1, image=img)
+                            imgCanvas = Label(frame, image=img)
                             imgCanvas.image = img
                             imgCanvas.grid(row=row, column=0, padx=10, pady=10)
 
-                            Label(myCart1, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
+                            Label(frame, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
                             
-                            Label(myCart1, textvariable=counters[everyItem]).grid(row=row, column=3)
-                            Button(myCart1, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
-                            Button(myCart1, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
-                            priceLabel = Label(myCart1, textvariable=priceLists[everyItem])
+                            Label(frame, textvariable=counters[everyItem]).grid(row=row, column=3)
+                            Button(frame, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
+                            Button(frame, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
+                            priceLabel = Label(frame, textvariable=priceLists[everyItem])
                             priceLabel.grid(row=row, column=5)
-                            #priceListOfEveryItem.append()
+                            
                             row+= 1
-                        checkOutBtn = Button(myCart1, text="Chekout", command=checkOut)
-                        Label(myCart1, text="Total", font='Times 16 bold').grid(row=row, column=5)
-                        totalPriceLabel = Label(myCart1, textvariable=totalPrice, font='Times 16 bold')
+                        checkOutBtn = Button(frame, text="Calculate Price", command=checkOut)
+                        Label(frame, text="Total", font='Times 16 bold').grid(row=row+1, column=5)
+                        totalPriceLabel = Label(frame, textvariable=totalPrice, font='Times 16 bold')
                         totalPriceLabel.grid(row=row+1, column=6)
                         checkOutBtn.grid(row=row, column=5)
-                        myCart1.mainloop()
+                        frame.mainloop()
+                        canvas.configure(scrollregion=canvas.bbox("all"))
                     except:
                         MessageBox.showerror("Error", "Error while processing request")
                 except:
                     MessageBox.showerror("Error", "Error while processing request")
+            
             def allCategoryContents(row, x, y, categoryList, category):
                 def addToCart():
                     if my_btn['state'] == ACTIVE:
@@ -483,7 +501,7 @@ def login_user():
             groceryBtn = Button(productCategory, text="Groceries", command=grocery)
             groceryBtn.grid(row=2, column=4)
 
-            careBtn = Button(productCategory, text="Beauty and Care", command=grocery)
+            careBtn = Button(productCategory, text="Beauty and Care", command=beautyAndCare)
             careBtn.grid(row=2, column=5)
             productCategory.mainloop()
 
