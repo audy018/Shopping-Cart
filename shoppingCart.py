@@ -224,7 +224,13 @@ def login_user():
                         priceLists = [IntVar() for _ in range(len(namesOfProductsInCart))]
                         productIDSInt = [IntVar() for _ in range(len(namesOfProductsInCart))]
                         priceOfEvery = []
+                        sum1 = 0
+                        totalPrice=IntVar()
+                        for i in range(len(namesOfProductsInCart)):
+                            counters[i].set(1)
+                            sum1 += priceOfProductsInCart[i]
                         
+                        totalPrice.set(sum1)
                         def increase_stat(event=None, counter=None, mul=None, index=None):
                             counter.set(counter.get() + 1)
                             mul.set(mul.get() + priceOfProductsInCart[index])
@@ -252,8 +258,8 @@ def login_user():
                             except:
                                 MessageBox.showinfo("Error", "Unable to process request")
                                 conn1.rollback()
-                        totalPrice=IntVar()
-                        def checkOut():
+                        
+                        def calcPrice():
                             cur.execute("SELECT price from cartItems where userID=('"+username+"')")
                             rec = cur.fetchall()
                             sumOfProducts = list(map(itemgetter(0), rec))
@@ -262,9 +268,12 @@ def login_user():
                                 totalSum += sumOfProducts[i]
 
                             totalPrice.set(totalSum)
-                            conn1.close()
                             
-                        
+                            
+                        def checkOut():
+                            MessageBox.showinfo("CHECKED OUT", "You have successfully checked out")
+                            conn1.close()
+                            exit(0)
                         for i in range(len(namesOfProductsInCart)):
                             priceLists[i].set(priceOfProductsInCart[i])
                         
@@ -297,6 +306,7 @@ def login_user():
 
                             Label(frame, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
                             
+                            
                             Label(frame, textvariable=counters[everyItem]).grid(row=row, column=3)
                             Button(frame, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
                             Button(frame, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
@@ -304,11 +314,13 @@ def login_user():
                             priceLabel.grid(row=row, column=5)
                             
                             row+= 1
-                        checkOutBtn = Button(frame, text="Calculate Price", command=checkOut)
+                        calcPriceBtn = Button(frame, text="Calculate Price", command=calcPrice)
+                        checkOutBtn = Button(frame, text="Check Out", command=checkOut)
                         Label(frame, text="Total", font='Times 16 bold').grid(row=row+1, column=5)
                         totalPriceLabel = Label(frame, textvariable=totalPrice, font='Times 16 bold')
                         totalPriceLabel.grid(row=row+1, column=6)
-                        checkOutBtn.grid(row=row, column=5)
+                        calcPriceBtn.grid(row=row, column=5)
+                        checkOutBtn.grid(row=row+2, column=5)
                         frame.mainloop()
                         canvas.configure(scrollregion=canvas.bbox("all"))
                     except:
