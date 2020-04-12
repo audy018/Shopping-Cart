@@ -236,8 +236,16 @@ def login_user():
                             except:
                                 MessageBox.showinfo("Error", "Unable to process request")
                                 conn1.rollback()
-                        
+                        totalPrice=IntVar()
                         def checkOut():
+                            cur.execute("SELECT price from cartItems where userID=('"+username+"')")
+                            rec = cur.fetchall()
+                            sumOfProducts = list(map(itemgetter(0), rec))
+                            totalSum=0
+                            for i in range(len(sumOfProducts)):
+                                totalSum += sumOfProducts[i]
+
+                            totalPrice.set(totalSum)
                             conn1.close()
                             
                         
@@ -250,6 +258,7 @@ def login_user():
                         Label(myCart1, text="Quantity").grid(row=0, column=3)
                         Label(myCart1, text="Price").grid(row=0, column=5)
                         n = 2
+                        
                         
                         for everyItem in range(len(productIDsInCart)):
                             
@@ -280,6 +289,9 @@ def login_user():
                             #priceListOfEveryItem.append()
                             row+= 1
                         checkOutBtn = Button(myCart1, text="Chekout", command=checkOut)
+                        Label(myCart1, text="Total", font='Times 16 bold').grid(row=row, column=5)
+                        totalPriceLabel = Label(myCart1, textvariable=totalPrice, font='Times 16 bold')
+                        totalPriceLabel.grid(row=row+1, column=6)
                         checkOutBtn.grid(row=row, column=5)
                         myCart1.mainloop()
                     except:
