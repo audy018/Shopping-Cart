@@ -222,14 +222,16 @@ def login_user():
                         pathOfProductsInCart = list(map(itemgetter(4), recordOfItemsInCart))
                         counters = [IntVar() for _ in range(len(namesOfProductsInCart))]
                         priceLists = [IntVar() for _ in range(len(namesOfProductsInCart))]
-                        productIDSInt = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                        
                         priceOfEvery = []
                         sum1 = 0
                         totalPrice=IntVar()
                         for i in range(len(namesOfProductsInCart)):
                             counters[i].set(1)
                             sum1 += priceOfProductsInCart[i]
-                        
+                            sql1 = "UPDATE cartItems set price=('"+str(priceOfProductsInCart[i])+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[i])+"'))"
+                            cur.execute(sql1)
+                            conn1.commit()
                         totalPrice.set(sum1)
                         def increase_stat(event=None, counter=None, mul=None, index=None):
                             counter.set(counter.get() + 1)
@@ -260,14 +262,10 @@ def login_user():
                                 conn1.rollback()
                         
                         def calcPrice():
-                            cur.execute("SELECT price from cartItems where userID=('"+username+"')")
-                            rec = cur.fetchall()
-                            sumOfProducts = list(map(itemgetter(0), rec))
-                            totalSum=0
-                            for i in range(len(sumOfProducts)):
-                                totalSum += sumOfProducts[i]
-
-                            totalPrice.set(totalSum)
+                            cur.execute("SELECT sum(price) from cartItems where userID=('"+username+"')")
+                            rec = cur.fetchone()
+                            
+                            totalPrice.set(rec[0])
                             
                             
                         def checkOut():
