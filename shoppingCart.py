@@ -173,158 +173,158 @@ def login_user():
             productPrice = list(map(itemgetter(3), allRecords))
             productImages = list(map(itemgetter(4), allRecords))
             productCategories = list(map(itemgetter(5), allRecords))
-            recordOfItemsInCart = []   
+            recordOfItemsInCart1 = []   
             
             def myCart():
-                try:
-                    def onFrameConfigure(event):
-                        canvas.configure(scrollregion=canvas.bbox("all"))
+                
+                def onFrameConfigure(event):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
                     
-                    myCart1 = Toplevel()
-                    myCart1.title("View Cart")
-                    myCart1.geometry("600x600")
-                    conn1 = mysql.connector.connect(
+                myCart1 = Toplevel()
+                myCart1.title("View Cart")
+                myCart1.geometry("600x600")
+                conn1 = mysql.connector.connect(
                             host="localhost",
                             user="root",
                             passwd="Parth@123",
                             database="loginForPython"
                     )
-                    canvas = Canvas(myCart1)
-                    canvas.grid(sticky=N+S+E+W)
+                canvas = Canvas(myCart1)
+                canvas.grid(sticky=N+S+E+W)
                     
-                    yscrollbar = Scrollbar(myCart1, command=canvas.yview)
-                    yscrollbar.grid(row=0, column=3, sticky=N+S)
+                yscrollbar = Scrollbar(myCart1, command=canvas.yview)
+                yscrollbar.grid(row=0, column=3, sticky=N+S)
                 
-                    canvas.configure(yscrollcommand= yscrollbar.set)
+                canvas.configure(yscrollcommand= yscrollbar.set)
                     
-                    frame = Frame(canvas)
+                frame = Frame(canvas)
                     
-                    canvas.create_window((0, 0), window=frame, anchor='nw')
-                    frame.bind("<Configure>", onFrameConfigure)
-                    myCart1.grid_rowconfigure(0, weight=1)
-                    myCart1.grid_columnconfigure(0, weight=1)
+                canvas.create_window((0, 0), window=frame, anchor='nw')
+                frame.bind("<Configure>", onFrameConfigure)
+                myCart1.grid_rowconfigure(0, weight=1)
+                myCart1.grid_columnconfigure(0, weight=1)
+                
+
+                everyProduct = IntVar()
+                sumOfEveryItem = 0
+                cur = conn1.cursor()
+                cur.execute("SELECT * FROM cartItems where userID=('"+str(username)+"')")
+                records=cur.fetchall()
+                productIDsInCart = list(map(itemgetter(1), records))
+                print(productIDsInCart)
+                
+                for item in range(len(productIDsInCart)):
+                    sql = "SELECT * FROM products where pid=('"+str(productIDsInCart[item])+"')"
+                    cur.execute(sql)
+                    recordOfItemsInCart1.append(cur.fetchone())
+
+                recordOfItemsInCart = list(dict.fromkeys(recordOfItemsInCart1))
+                      
+                namesOfProductsInCart = list(map(itemgetter(1), recordOfItemsInCart))
+                priceOfProductsInCart = list(map(itemgetter(3), recordOfItemsInCart))
+                pathOfProductsInCart = list(map(itemgetter(4), recordOfItemsInCart))
+                counters = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                priceLists = [IntVar() for _ in range(len(namesOfProductsInCart))]
+                    
+                priceOfEvery = []
+                sum1 = 0
+                totalPrice=IntVar()
+                for i in range(len(namesOfProductsInCart)):
+                    counters[i].set(1)
+                    sum1 += priceOfProductsInCart[i]
+                    sql1 = "UPDATE cartItems set price=('"+str(priceOfProductsInCart[i])+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[i])+"'))"
+                    cur.execute(sql1)
+                    conn1.commit()
+                totalPrice.set(sum1)
+                
+                def increase_stat(event=None, counter=None, mul=None, index=None):
+                    counter.set(counter.get() + 1)
+                    mul.set(mul.get() + priceOfProductsInCart[index])
+                    sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                    sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
                     try:
-
-                        everyProduct = IntVar()
-                        sumOfEveryItem = 0
-                        cur = conn1.cursor()
-                        cur.execute("SELECT * FROM cartItems where userID=('"+str(username)+"')")
-                        records=cur.fetchall()
-                        productIDsInCart = list(map(itemgetter(1), records))
-                        
-                        for item in range(len(productIDsInCart)):
-                            sql = "SELECT * FROM products where pid=('"+str(productIDsInCart[item])+"')"
-                            cur.execute(sql)
-                            recordOfItemsInCart.append(cur.fetchone())
-                        
-                        namesOfProductsInCart = list(map(itemgetter(1), recordOfItemsInCart))
-                        priceOfProductsInCart = list(map(itemgetter(3), recordOfItemsInCart))
-                        pathOfProductsInCart = list(map(itemgetter(4), recordOfItemsInCart))
-                        counters = [IntVar() for _ in range(len(namesOfProductsInCart))]
-                        priceLists = [IntVar() for _ in range(len(namesOfProductsInCart))]
-                        
-                        priceOfEvery = []
-                        sum1 = 0
-                        totalPrice=IntVar()
-                        for i in range(len(namesOfProductsInCart)):
-                            counters[i].set(1)
-                            sum1 += priceOfProductsInCart[i]
-                            sql1 = "UPDATE cartItems set price=('"+str(priceOfProductsInCart[i])+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[i])+"'))"
-                            cur.execute(sql1)
-                            conn1.commit()
-                        totalPrice.set(sum1)
-                        def increase_stat(event=None, counter=None, mul=None, index=None):
-                            counter.set(counter.get() + 1)
-                            mul.set(mul.get() + priceOfProductsInCart[index])
-                            sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
-                            sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
-                            try:
-                                cur.execute(sql1)
-                                conn1.commit()
-                                cur.execute(sql2)
-                                conn1.commit()
-                            except:
-                                MessageBox.showinfo("Error", "Unable to process request")
-                                conn1.rollback()
-                            
-                        def decrease_stat(event=None, counter=None, mul=None ,index=None):
-                            counter.set(counter.get() - 1)
-                            mul.set(mul.get() - priceOfProductsInCart[index])
-                            sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
-                            sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
-                            try:
-                                cur.execute(sql1)
-                                conn1.commit()
-                                cur.execute(sql2)
-                                conn1.commit()
-                            except:
-                                MessageBox.showinfo("Error", "Unable to process request")
-                                conn1.rollback()
-                        
-                        def calcPrice():
-                            cur.execute("SELECT sum(price) from cartItems where userID=('"+username+"')")
-                            rec = cur.fetchone()
-                            
-                            totalPrice.set(rec[0])
-                            
-                            
-                        def checkOut():
-                            MessageBox.showinfo("CHECKED OUT", "You have successfully checked out")
-                            conn1.close()
-                            exit(0)
-                        for i in range(len(namesOfProductsInCart)):
-                            priceLists[i].set(priceOfProductsInCart[i])
-                        
-                        row = 1
-                        Label(frame, text="Image").grid(row=0, column=0)
-                        Label(frame, text="Name").grid(row=0, column=1)
-                        Label(frame, text="Quantity").grid(row=0, column=3)
-                        Label(frame, text="Price").grid(row=0, column=5)
-                        n = 2
-                        
-                        
-                        for everyItem in range(len(productIDsInCart)):
-                            
-                            path = pathOfProductsInCart[everyItem]
-                            image = Image.open(path)
-                            [imageSizeWidth, imageSizeHeight] = [45, 75]
-                            same = True
-                        
-                            newImageSizeWidth = int(imageSizeWidth*n)
-                            if same:
-                                newImageSizeHeight = int(imageSizeHeight*n) 
-                            else:
-                                newImageSizeHeight = int(imageSizeHeight/n) 
-
-                            image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
-                            img = ImageTk.PhotoImage(image)
-                            imgCanvas = Label(frame, image=img)
-                            imgCanvas.image = img
-                            imgCanvas.grid(row=row, column=0, padx=10, pady=10)
-
-                            Label(frame, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
-                            
-                            
-                            Label(frame, textvariable=counters[everyItem]).grid(row=row, column=3)
-                            Button(frame, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
-                            Button(frame, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
-                            priceLabel = Label(frame, textvariable=priceLists[everyItem])
-                            priceLabel.grid(row=row, column=5)
-                            
-                            row+= 1
-                        calcPriceBtn = Button(frame, text="Calculate Price", command=calcPrice)
-                        checkOutBtn = Button(frame, text="Check Out", command=checkOut)
-                        Label(frame, text="Total", font='Times 16 bold').grid(row=row+1, column=5)
-                        totalPriceLabel = Label(frame, textvariable=totalPrice, font='Times 16 bold')
-                        totalPriceLabel.grid(row=row+1, column=6)
-                        calcPriceBtn.grid(row=row, column=5)
-                        checkOutBtn.grid(row=row+2, column=5)
-                        frame.mainloop()
-                        canvas.configure(scrollregion=canvas.bbox("all"))
+                        cur.execute(sql1)
+                        conn1.commit()
+                        cur.execute(sql2)
+                        conn1.commit()
                     except:
-                        MessageBox.showerror("Error", "Error while processing request")
-                except:
-                    MessageBox.showerror("Error", "Error while processing request")
+                        MessageBox.showinfo("Error", "Unable to process request SQL")
+                        conn1.rollback()
+                        
+                def decrease_stat(event=None, counter=None, mul=None ,index=None):
+                    counter.set(counter.get() - 1)
+                    mul.set(mul.get() - priceOfProductsInCart[index])
+                    sql1 = "UPDATE cartItems set quantity=('"+str(counter.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                    sql2 = "UPDATE cartItems set price=('"+str(mul.get())+"') where (userID=('"+str(username)+"') and productID=('"+str(productIDsInCart[index])+"'))"
+                    try:
+                        cur.execute(sql1)
+                        conn1.commit()
+                        cur.execute(sql2)
+                        conn1.commit()
+                    except:
+                        MessageBox.showinfo("Error", "Unable to process request")
+                        conn1.rollback()
+                        
+                def calcPrice():
+                    cur.execute("SELECT sum(price) from cartItems where userID=('"+username+"')")
+                    rec = cur.fetchone()
+                            
+                    totalPrice.set(rec[0])
+                            
+                            
+                def checkOut():
+                    MessageBox.showinfo("CHECKED OUT", "You have successfully checked out")
+                    conn1.close()
+                    exit(0)
+                for i in range(len(namesOfProductsInCart)):
+                    priceLists[i].set(priceOfProductsInCart[i])
+                    
+                row = 1
+                Label(frame, text="Image").grid(row=0, column=0)
+                Label(frame, text="Name").grid(row=0, column=1)
+                Label(frame, text="Quantity").grid(row=0, column=3)
+                Label(frame, text="Price").grid(row=0, column=5)
+                n = 2
+                        
+                        
+                for everyItem in range(len(productIDsInCart)):
+                    
+                    path = pathOfProductsInCart[everyItem]
+                    image = Image.open(path)
+                    [imageSizeWidth, imageSizeHeight] = [45, 75]
+                    same = True
+                    
+                    newImageSizeWidth = int(imageSizeWidth*n)
+                    if same:
+                        newImageSizeHeight = int(imageSizeHeight*n) 
+                    else:
+                        newImageSizeHeight = int(imageSizeHeight/n) 
+
+                    image = image.resize((newImageSizeWidth, newImageSizeHeight), Image.ANTIALIAS)
+                    img = ImageTk.PhotoImage(image)
+                    imgCanvas = Label(frame, image=img)
+                    imgCanvas.image = img
+                    imgCanvas.grid(row=row, column=0, padx=10, pady=10)
+
+                    Label(frame, text=namesOfProductsInCart[everyItem]).grid(row=row, column=1)
+                            
+                            
+                    Label(frame, textvariable=counters[everyItem]).grid(row=row, column=3)
+                    Button(frame, text="+", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: increase_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=4)
+                    Button(frame, text="-", command=lambda counter=counters[everyItem], mul=priceLists[everyItem], index=everyItem: decrease_stat(counter=counter, index=index, mul=mul)).grid(row=row, column=2)
+                    priceLabel = Label(frame, textvariable=priceLists[everyItem])
+                    priceLabel.grid(row=row, column=5)
+                            
+                    row+= 1
+                calcPriceBtn = Button(frame, text="Calculate Price", command=calcPrice)
+                checkOutBtn = Button(frame, text="Check Out", command=checkOut)
+                Label(frame, text="Total", font='Times 16 bold').grid(row=row+1, column=5)
+                totalPriceLabel = Label(frame, textvariable=totalPrice, font='Times 16 bold')
+                totalPriceLabel.grid(row=row+1, column=6)
+                calcPriceBtn.grid(row=row, column=5)
+                checkOutBtn.grid(row=row+2, column=5)
+                frame.mainloop()
+                canvas.configure(scrollregion=canvas.bbox("all"))
             
             def allCategoryContents(row, x, y, categoryList, category):
                 def addToCart():
