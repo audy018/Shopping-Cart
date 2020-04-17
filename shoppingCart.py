@@ -1,5 +1,4 @@
 from tkinter import *
-import tkinter as tk
 import mysql.connector
 from tkinter.ttk import Scrollbar
 import tkinter.messagebox as MessageBox
@@ -176,13 +175,12 @@ def login_user():
             recordOfItemsInCart1 = []   
             
             def myCart():
-                
                 def onFrameConfigure(event):
                     canvas.configure(scrollregion=canvas.bbox("all"))
                     
                 myCart1 = Toplevel()
                 myCart1.title("View Cart")
-                myCart1.geometry("600x600")
+                myCart1.geometry("650x650")
                 conn1 = mysql.connector.connect(
                             host="localhost",
                             user="root",
@@ -211,7 +209,7 @@ def login_user():
                 cur.execute("SELECT * FROM cartItems where userID=('"+str(username)+"')")
                 records=cur.fetchall()
                 productIDsInCart = list(map(itemgetter(1), records))
-                print(productIDsInCart)
+                
                 
                 for item in range(len(productIDsInCart)):
                     sql = "SELECT * FROM products where pid=('"+str(productIDsInCart[item])+"')"
@@ -270,12 +268,43 @@ def login_user():
                     rec = cur.fetchone()
                             
                     totalPrice.set(rec[0])
-                            
-                            
+                
                 def checkOut():
-                    MessageBox.showinfo("CHECKED OUT", "You have successfully checked out")
-                    conn1.close()
-                    exit(0)
+                    
+                    orderid = randint(10000, 99999)
+                    conn2 = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        passwd="Parth@123",
+                        database="loginForPython"
+                    )
+                    c2 = conn2.cursor()
+                    sql0 = "SELECT price FROM cartItems where userID=('"+str(username)+"')"
+                    c2.execute(sql0)
+                    rec1 = c2.fetchall()
+                    totalPriceList = list(map(itemgetter(0), rec1))
+                    print(totalPriceList)
+                    sql2 = "SELECT * FROM showorders"
+                    c2.execute(sql2)
+                    rec = c2.fetchall()
+                    orderIDList = list(map(itemgetter(2), rec))
+                    if orderid not in orderIDList:
+                        for item in range(len(productIDsInCart)):
+                            sql1 = "INSERT INTO showorders(userID, productID, orderID, price) values('"+str(username)+"','"+str(productIDsInCart[item])+"','"+str(orderid)+"','"+str(totalPriceList[item])+"')"
+                            c2.execute(sql1)
+                            conn2.commit()
+                            
+                        sql3 = "DELETE FROM cartItems where userID=('"+str(username)+"')"
+                        c2.execute(sql3)
+                        conn2.commit()
+                        MessageBox.showinfo("CHECKED OUT", "Your Order ID is "+str(orderid)+" and yet to be confirmed by admin")
+                        conn2.close()
+                        conn1.close()
+                        myCart1.destroy()
+                    else:
+                        orderid = randint(10000, 99999)
+                        checkOut()
+                
                 for i in range(len(namesOfProductsInCart)):
                     priceLists[i].set(priceOfProductsInCart[i])
                     
@@ -316,6 +345,7 @@ def login_user():
                     priceLabel.grid(row=row, column=5)
                             
                     row+= 1
+                
                 calcPriceBtn = Button(frame, text="Calculate Price", command=calcPrice)
                 checkOutBtn = Button(frame, text="Check Out", command=checkOut)
                 Label(frame, text="Total", font='Times 16 bold').grid(row=row+1, column=5)
@@ -483,7 +513,7 @@ def login_user():
 
             productCategory = Toplevel()
             productCategory.title("Product Category")
-            productCategory.geometry("500x300")
+            productCategory.geometry("700x200")
             menubar = Menubutton(
                 productCategory, text="---", relief=FLAT, justify=LEFT)
             menubar.place(x=0, y=0)
@@ -958,9 +988,29 @@ def login_admin():
         password_entry.delete(0, 'end')
     
     def show_details():
+        def onFrameConfigure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
         detailsUser= Toplevel()
-        detailsUser.geometry("300x300")    
-        Label(detailsUser,text = "Entries",font ="comic 20 bold underline").pack()
+        canvas = Canvas(detailsUser)
+        canvas.grid(sticky=N+S+E+W)
+                    
+        yscrollbar = Scrollbar(detailsUser, command=canvas.yview)
+        yscrollbar.grid(row=0, column=3, sticky=N+S)
+                
+        canvas.configure(yscrollcommand= yscrollbar.set)
+                    
+        frame = Frame(canvas)
+        
+        canvas.create_window((0, 0), window=frame, anchor='nw')
+
+        frame.bind("<Configure>", onFrameConfigure)
+                
+        detailsUser.grid_rowconfigure(0, weight=1)
+        detailsUser.grid_columnconfigure(0, weight=1)
+        detailsUser.geometry("500x500")    
+        
+        Label(frame,text = "Entries",font ="comic 20 bold underline").grid(row=0, column=1)
         conn = mysql.connector.connect(
                         host="localhost",
                         user="root",
@@ -968,25 +1018,47 @@ def login_admin():
                         database="loginForPython",
                     )
         c = conn.cursor()
-        c.execute("select * from user_info")  
+        c.execute("select * from user_info")
+        row=1
+        Label(frame, text="Username").grid(row=row, column=0)
+        Label(frame, text="Passwords").grid(row=row, column=1)
+        Label(frame, text="First Name").grid(row=row, column=2)
+        row += 1  
         result = c.fetchall()
         usernames = list(map(itemgetter(0), result))
         passwords = list(map(itemgetter(1), result))
         firstNames = list(map(itemgetter(2), result))
         for record in range(len(result)):  
-            Label(detailsUser, text="Username").pack()
-            Label(detailsUser, text=usernames[record]).pack()
-            Label(detailsUser, text="Password").pack()
-            Label(detailsUser, text=passwords[record]).pack()
-            Label(detailsUser, text="First Name").pack()
-            Label(detailsUser, text=firstNames[record]).pack()
-            Label(detailsUser, text="-------------------------").pack()        
+            Label(frame, text=usernames[record]).grid(row=row, column=0)
+            Label(frame, text=passwords[record]).grid(row=row, column=1)
+            Label(frame, text=firstNames[record]).grid(row=row, column=2)
+            row += 1
 
+        canvas.configure(scrollregion=canvas.bbox("all"))
         detailsUser.mainloop()
-    
+        
     def modification():
-        def deleteuser():
-            u_name = username1_entry.get()
+        def viewpendingorder():
+            def onFrameConfigure(event):
+                canvas.configure(scrollregion=canvas.bbox("all"))
+            p= Toplevel()
+            p.geometry("500x500")
+            p.title("View pending orders")
+            canvas = Canvas(p)
+            canvas.grid(sticky=N+S+E+W)
+                        
+            yscrollbar = Scrollbar(p, command=canvas.yview)
+            yscrollbar.grid(row=0, column=4, sticky=N+S)
+                    
+            canvas.configure(yscrollcommand= yscrollbar.set)
+            frame = Frame(canvas)
+            
+            canvas.create_window((0, 0), window=frame, anchor='nw')
+
+            frame.bind("<Configure>", onFrameConfigure)
+            p.grid_rowconfigure(0, weight=1)
+            p.grid_columnconfigure(0, weight=1)
+            
             conn = mysql.connector.connect(
                             host="localhost",
                             user="root",
@@ -995,44 +1067,190 @@ def login_admin():
                             
                         )
             c = conn.cursor()
-            c.execute("select * from user_info")  
+            c.execute("select * from showorders where isApproved=('F')")  
+            result = c.fetchall() 
+            userID = list(map(itemgetter(0), result))
+            productID = list(map(itemgetter(1), result))
+            orderID = list(map(itemgetter(2), result))
+            price = list(map(itemgetter(3) ,result))
+            Label(frame, text="PENDING ORDERS").grid(row=0, column=1)
+            row=1
+            Label(frame, text="Username").grid(row=row, column=0)
+            Label(frame, text="Product ID").grid(row=row, column=1)
+            Label(frame, text="Order ID").grid(row=row, column=2)
+            Label(frame, text="Price").grid(row=row, column=3)
+            row += 1
+            for record in range(len(result)):  
+                Label(frame, text=userID[record]).grid(row=row, column=0)
+                Label(frame, text=productID[record]).grid(row=row, column=1)                
+                Label(frame, text=orderID[record]).grid(row=row, column=2)
+                Label(frame, text=price[record]).grid(row=row, column=3)
+                row += 1 
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            p.mainloop()
+            
+            
+        def viewcompleteorder():
+            def onFrameConfigure(event):
+                canvas.configure(scrollregion=canvas.bbox("all"))
+            s= Toplevel()
+            s.geometry("500x500")
+            s.title("View completed orders")
+            canvas = Canvas(s)
+            canvas.grid(sticky=N+S+E+W)
+                        
+            yscrollbar = Scrollbar(s, command=canvas.yview)
+            yscrollbar.grid(row=0, column=4, sticky=N+S)
+                    
+            canvas.configure(yscrollcommand= yscrollbar.set)
+                        
+            frame = Frame(canvas)
+            
+            canvas.create_window((0, 0), window=frame, anchor='nw')
+
+            frame.bind("<Configure>", onFrameConfigure)
+            s.grid_rowconfigure(0, weight=1)
+            s.grid_columnconfigure(0, weight=1)
+            
+            conn = mysql.connector.connect(
+                            host="localhost",
+                            user="root",
+                            passwd="Parth@123",
+                            database="loginForPython"
+                            
+                        )
+            c = conn.cursor()
+            c.execute("select * from showorders where isApproved=('T')")  
+            result = c.fetchall() 
+            userID = list(map(itemgetter(0), result))
+            productID = list(map(itemgetter(1), result))
+            orderID = list(map(itemgetter(2), result))
+            price = list(map(itemgetter(3) ,result))
+            Label(frame, text="COMPLETED ORDERS").grid(row=0, column=1)
+            row=1
+            Label(frame, text="Username").grid(row=row, column=0)
+            Label(frame, text="Product ID").grid(row=row, column=1)
+            Label(frame, text="Order ID").grid(row=row, column=2)
+            Label(frame, text="Price").grid(row=row, column=3)
+            row += 1
+            for record in range(len(result)):                  
+                Label(frame, text=userID[record]).grid(row=row, column=0)              
+                Label(frame, text=productID[record]).grid(row=row, column=1)
+                Label(frame, text=orderID[record]).grid(row=row, column=2)
+                Label(frame, text=price[record]).grid(row=row, column=3)
+                row += 1 
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            s.mainloop()
+        
+        m = Toplevel()
+        m.geometry("300x300")
+        pending = Button(m,text="VIEW PENDING ORDERS",command=viewpendingorder)
+        pending.place(x=150, y=70,anchor=CENTER)
+        confirm = Button(m,text="VIEW FINAL ORDERS",command=viewcompleteorder)
+        confirm.place(x=150, y=120,anchor=CENTER)
+        m.mainloop()
+        
+    def update1():
+        def deleteorder():
+            d=Toplevel()
+            d.geometry("400x400")
+            d.title("Delete order")
+            orderID = orderID_entry.get()
+            conn = mysql.connector.connect(
+                            host="localhost",
+                            user="root",
+                            passwd="Parth@123",
+                            database="loginForPython"
+                            
+                        )
+            c = conn.cursor()
+            c.execute("select * from showorders")  
             all_records = c.fetchall() 
-            userNamesList = list(map(itemgetter(0), all_records))
-            if u_name in userNamesList :
-                sql = "delete from user_info where user_name =('"+u_name+"')"
+            orderList = list(map(itemgetter(2), all_records))
+            if str(orderID) in str(orderList) :
+                sql = "delete from showorders where orderID =('"+str(orderID)+"')"
                 try:
                     c.execute(sql)
                     conn.commit()
-                    MessageBox.showinfo("Success", "User deleted successfully from the database")
+                    MessageBox.showinfo("Success", "order is cancelled")
                 except: 
                     conn.rollback()
                 finally:
                     conn.close()
             else :
-                MessageBox.showinfo("User not present in the database")
-        
+                MessageBox.showinfo("order id is not present in the database")
+            d.mainloop()
+            
+        def confirm_order():
+            c1 = Toplevel()
+            c1.geometry("400x400")
+            orderID1 =orderID_entry.get()
+            conn = mysql.connector.connect(
+                            host="localhost",
+                            user="root",
+                            passwd="Parth@123",
+                            database="loginForPython"
+                            
+                        )
+            c = conn.cursor()
+            c.execute("select * from showorders")
+            res = c.fetchall()
+            confirmlist = list(map(itemgetter(2), res))
+            
+            if str(orderID1) in str(confirmlist):
+                sql = "UPDATE showorders SET isApproved =('T') WHERE orderID =('"+str(orderID1)+"')"
+                sql1 = "select email from user_info where user_name in (select s.userID from showorders as s where s.orderID in (select o.orderID from showorders as o where o.isApproved='T'))"
+
+                try:
+                    c.execute(sql)
+                    
+                    conn.commit()
+                    c.execute(sql1)
+                    rec1 = c.fetchall()
+                    emailList = list(map(itemgetter(0), rec1))
+                    email = emailList[0]
+
+                    server = smtplib.SMTP('smtp.gmail.com', 587)
+                    server.starttls()                
+                    server.login("10bparth@gmail.com", "********")
+
+                    msg = "Your order ID number "+str(orderID1)+" is confirmed "
+                    server.sendmail("10bparth@gmail.com", email, msg)
+                    server.quit()
+                    MessageBox.showinfo("Success", "order confirmed")
+                except: 
+                    conn.rollback()
+                finally:
+                    conn.close()
+            else :
+                MessageBox.showinfo("Error", "orderid is not present in the database")
+            c1.mainloop()
+            
+            
         m = Toplevel()
         m.geometry("300x300")
-        Label(m,text ="Username",font = "comic 10 bold").grid(row= 2,column=1)
-        username1_entry = Entry(m, width=20)
-        username1_entry.grid(row =2,column=2)
-        delete_btn = Button(m,text="DELETE",command=deleteuser)
-        delete_btn.place(x=150, y=70,anchor=CENTER)
-        final_btn = Button(m,text="FINALIZE")
-        final_btn.place(x=150, y=120,anchor=CENTER)
+        Label(m,text ="OrderID",font = "comic 10 bold").grid(row= 0,column=1)
+        orderID_entry = Entry(m, width=20)
+        orderID_entry.grid(row =0,column=2)
+        delete_btn = Button(m,text="DELETE_ORDER",command=deleteorder)
+        delete_btn.grid(row=2, column=1)
+        final_btn = Button(m,text="CONFIRM_ORDER",command =confirm_order)
+        final_btn.grid(row=2, column=2)
+
+        m.mainloop()
     
     def Login():
-        print ('Successfully logged in')
         MessageBox.askquestion("Confirm","Are u sure to visit that page")       
         Afterlogin = Toplevel()
+        Afterlogin.title("Modification")
         Afterlogin.geometry("500x500")
         Label(Afterlogin,text ="Administrator work",font ="comic 20 bold").place(x=250,y=20,anchor=CENTER)
         
         show_btn = Button(Afterlogin,text = "show logins",command=show_details)
         show_btn.place(x= 250,y=100,anchor=CENTER)      
-        updt_btn = Button(Afterlogin,text="modify user",command =modification)
+        updt_btn = Button(Afterlogin,text="modify orders", command=update1)
         updt_btn.place(x=250, y=200,anchor=CENTER)     
-        vieworder_btn =Button(Afterlogin,text="view orders")
+        vieworder_btn =Button(Afterlogin,text="view orders", command=modification)
         vieworder_btn.place(x=250,y= 300,anchor=CENTER) 
     
     loginAdmin = Toplevel()
@@ -1067,7 +1285,7 @@ def login_admin():
     reset_everything.pack()
     loginAdmin.mainloop()
 
-def main_screen():
+if __name__=='__main__':
     main = Tk()
     main.geometry("500x400")
     main.title("Main Screen")
@@ -1085,4 +1303,4 @@ def main_screen():
 
 
 
-main_screen()
+
